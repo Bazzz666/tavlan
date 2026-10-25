@@ -519,7 +519,7 @@ async function start() {
   history.replaceState(null, "", location.pathname + location.search + "#" + h.toString());
   if (!deviceKey) {
     const b = document.getElementById("banners");
-    b.append(el("div", { class: "banner info" }, "Läsläge. Knapparna kommer när enheten är ihopparad."));
+    b.append(el("div", { class: "banner info" }, "Läsläge. Öppna parningslänken från Claude på den här enheten för att få knapparna."));
   }
   await load();
   setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000);
