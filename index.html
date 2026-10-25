@@ -380,6 +380,15 @@ function render() {
   const stamps = items.map(i => i.updated_at).concat(Object.values(meta).map(m => m && m._updated)).filter(Boolean).map(t => new Date(t).getTime());
   document.getElementById("stamp").textContent = stamps.length ? "Uppdaterad " + when(new Date(Math.max(...stamps)).toISOString()) : "";
 
+  const coll = meta.insamling;
+  if (coll && coll._updated) {
+    const ageMin = (Date.now() - new Date(coll._updated).getTime()) / 60000;
+    if (ageMin > 30) parts.push(el("div", { class: "banner info" },
+      "Macen har inte hämtat nytt sedan " + when(coll._updated) + ". Påminnelser, kalender och Kör-knappen väntar tills den är vaken igen."));
+    else if (Array.isArray(coll.errors) && coll.errors.length) parts.push(el("div", { class: "banner info" },
+      "Insamlingen har problem: " + coll.errors[0]));
+  }
+
   const top = meta.viktigast;
   if (top && top.text) {
     const target = top.item_id ? items.find(i => i.id === top.item_id) : null;
