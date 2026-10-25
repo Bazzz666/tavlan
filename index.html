@@ -339,6 +339,11 @@ function pendingText(i) {
     what = b ? b.label : "”" + last.note + "”";
   }
   if (last.action === "ny") what = "Ny sak";
+  if (last.action === "run") {
+    let host = "";
+    try { host = JSON.parse(last.note).host; } catch (e) { host = ""; }
+    return "Startar strax" + (host === "openclaw" ? " på openclaw-mac" : host === "macbook" ? " på MacBooken" : "") + ".";
+  }
   return "Skickat till AI:n: " + what + ". Den tar det inom någon minut.";
 }
 
@@ -415,11 +420,14 @@ function render() {
   const stamps = items.map(i => i.updated_at).concat(Object.values(meta).map(m => m && m._updated)).filter(Boolean).map(t => new Date(t).getTime());
   document.getElementById("stamp").textContent = stamps.length ? "Uppdaterad " + when(new Date(Math.max(...stamps)).toISOString()) : "";
 
+  const minutesSince = t => (Date.now() - new Date(t).getTime()) / 60000;
+  const server = meta["host-openclaw"];
+  if (server && server._updated && minutesSince(server._updated) > 10) parts.push(el("div", { class: "banner bad" },
+    "openclaw-mac har inte svarat sedan " + when(server._updated) + ". MacBooken tar över knappar och AI-jobb när den är vaken."));
   const coll = meta.insamling;
   if (coll && coll._updated) {
-    const ageMin = (Date.now() - new Date(coll._updated).getTime()) / 60000;
-    if (ageMin > 30) parts.push(el("div", { class: "banner info" },
-      "Macen har inte hämtat nytt sedan " + when(coll._updated) + ". Påminnelser, kalender och Kör-knappen väntar tills den är vaken igen."));
+    if (minutesSince(coll._updated) > 30) parts.push(el("div", { class: "banner info" },
+      "MacBooken har inte hämtat påminnelser och kalender sedan " + when(coll._updated) + ". Allt annat fortsätter på openclaw-mac."));
     else if (Array.isArray(coll.errors) && coll.errors.length) parts.push(el("div", { class: "banner info" },
       "Insamlingen har problem: " + coll.errors[0]));
   }
@@ -493,6 +501,14 @@ function render() {
   const done = items.filter(i => i.status === "klar").sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
   parts.push(section("Klart senaste 30 dagarna", null, null, el("button", { class: "link", onclick: () => { state.showDone = !state.showDone; render(); } }, done.length + (state.showDone ? " ▴" : " ▾"))));
   if (state.showDone) parts.push(done.length ? done.map(i => block(i)) : el("p", { class: "empty" }, "Inget klart ännu."));
+
+  const hosts = [["host-openclaw", "openclaw-mac"], ["host-macbook", "MacBook"]].filter(([k]) => meta[k] && meta[k]._updated);
+  if (hosts.length) parts.push(el("div", { class: "meta", style: "margin-top: 22px; justify-content: center" },
+    hosts.map(([k, label]) => {
+      const m = meta[k], fresh = minutesSince(m._updated) <= 10;
+      return el("span", { class: "who" }, el("span", { class: "dot", style: "background: var(--" + (fresh ? "ok" : "faint") + ")" }),
+        label + (fresh ? (m.manager ? " · styr" : " · igång") : " · tyst sedan " + when(m._updated)));
+    })));
 
   const focused = document.activeElement;
   const keep = focused && focused.tagName === "INPUT" ? { ph: focused.placeholder, val: focused.value, parent: focused.closest(".card") ? focused.closest(".card").id : null } : null;
