@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tavlan">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161615" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>Tavlan</title>
+<style>
+:root {
+  --bg: #f6f5f2; --card: #ffffff; --soft: #efeee9; --text: #1d1d1b; --muted: #6b6a65; --faint: #9a9993;
+  --line: rgba(0,0,0,.09); --line-strong: rgba(0,0,0,.18);
+  --warn: #8a5300; --warn-bg: #fdf1dc; --warn-line: #e9b765;
+  --ok: #2f6b10; --ok-bg: #e9f3de; --info: #1b5fa6; --info-bg: #e6f0fb;
+  --bad: #a32d2d; --bad-bg: #fcebeb;
+  --claude: #c2582d; --codex: #0f7a5c; --cowork: #6a55c8; --du: #5f5e5a;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --card: #201f1d; --soft: #2a2927; --text: #ecebe6; --muted: #a5a49d; --faint: #77766f;
+    --line: rgba(255,255,255,.09); --line-strong: rgba(255,255,255,.2);
+    --warn: #f3c171; --warn-bg: #3a2a10; --warn-line: #8a6420;
+    --ok: #a6d77c; --ok-bg: #1f3012; --info: #8fc0f2; --info-bg: #122a44;
+    --bad: #f09595; --bad-bg: #3d1717;
+    --claude: #f0997b; --codex: #5dcaa5; --cowork: #afa9ec; --du: #b4b2a9;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --card: #201f1d; --soft: #2a2927; --text: #ecebe6; --muted: #a5a49d; --faint: #77766f;
+  --line: rgba(255,255,255,.09); --line-strong: rgba(255,255,255,.2);
+  --warn: #f3c171; --warn-bg: #3a2a10; --warn-line: #8a6420;
+  --ok: #a6d77c; --ok-bg: #1f3012; --info: #8fc0f2; --info-bg: #122a44;
+  --bad: #f09595; --bad-bg: #3d1717;
+  --claude: #f0997b; --codex: #5dcaa5; --cowork: #afa9ec; --du: #b4b2a9;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  padding: max(14px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+}
+main { max-width: 560px; margin: 0 auto; }
+h1 { font-size: 26px; font-weight: 600; margin: 4px 0 0; letter-spacing: -.01em; }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.stamp { font-size: 12px; color: var(--faint); white-space: nowrap; }
+.sum { font-size: 14px; color: var(--muted); margin: 2px 0 0; }
+.sec { display: flex; justify-content: space-between; align-items: center; margin: 24px 2px 8px;
+  font-size: 13px; font-weight: 600; color: var(--muted); text-transform: none; }
+.sec.warn { color: var(--warn); }
+.sec button.link { font-weight: 500; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
+.card.hero { border-color: var(--line-strong); }
+.card.wait { border-color: var(--warn-line); }
+.card.soft { background: var(--soft); border-color: transparent; }
+.card.dashed { border-style: dashed; }
+.card.done { opacity: .75; }
+.title { font-size: 15px; font-weight: 600; margin: 0; line-height: 1.35; overflow-wrap: anywhere; }
+.desc { font-size: 14px; color: var(--muted); margin: 3px 0 0; overflow-wrap: anywhere; white-space: pre-line; }
+.nowl { font-size: 13px; color: var(--text); margin: 6px 0 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; font-size: 12px; color: var(--faint); }
+.who { display: inline-flex; align-items: center; gap: 5px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--du); display: inline-block; }
+.pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 6px; margin-right: 6px; vertical-align: 1px; }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.info { background: var(--info-bg); color: var(--info); }
+.pill.time { background: var(--soft); color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+button {
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--text); background: var(--card);
+  border: 1px solid var(--line-strong); border-radius: 10px; padding: 7px 13px; min-height: 36px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active { transform: scale(.98); }
+button.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+button.link { border: none; background: none; padding: 0; min-height: 0; color: var(--muted); font-size: 13px; }
+button[disabled] { opacity: .5; }
+.approval { margin-top: 10px; background: var(--soft); border-radius: 10px; padding: 10px 12px; }
+.approval pre { margin: 0; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.approval .where { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.cal { display: grid; grid-template-columns: 52px 1fr; gap: 4px 10px; font-size: 14px; }
+.cal .t { color: var(--text); font-variant-numeric: tabular-nums; }
+.cal .e { color: var(--muted); overflow-wrap: anywhere; }
+.add { display: flex; gap: 8px; margin-top: 22px; }
+.add input { flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--text); background: var(--card);
+  border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 12px; }
+.details { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.details h4 { font-size: 12px; color: var(--faint); margin: 10px 0 4px; font-weight: 600; }
+.details ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
+.details a { color: var(--info); }
+.hist { font-size: 12px; color: var(--muted); }
+.hist div { padding: 2px 0; }
+.reply { display: flex; gap: 6px; margin-top: 8px; }
+.reply input { flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--text); background: var(--card);
+  border: 1px solid var(--line-strong); border-radius: 10px; padding: 6px 10px; }
+.empty { font-size: 14px; color: var(--faint); padding: 2px 2px 6px; }
+.banner { font-size: 13px; border-radius: 10px; padding: 10px 12px; margin: 14px 0 0; }
+.banner.info { background: var(--info-bg); color: var(--info); }
+.banner.bad { background: var(--bad-bg); color: var(--bad); }
+.banner.ok { background: var(--ok-bg); color: var(--ok); }
+.area { font-size: 12px; color: var(--faint); margin: 12px 2px 6px; }
+.tap { cursor: pointer; }
+.err { font-size: 13px; color: var(--bad); margin-top: 6px; }
+.hide { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>Tavlan</h1>
+    <span class="stamp" id="stamp"></span>
+  </div>
+  <p class="sum" id="sum">Hämtar …</p>
+  <div id="banners"></div>
+  <div id="app"></div>
+</main>
+<script>
+"use strict";
+const SUPABASE_URL = "https://pllaxiqesleviykbxkne.supabase.co";
+const ANON_KEY = "sb_publishable_F_icijgJ8FnIaXyO5cNeeQ_uy1RPjGs";
+
+const PROJECTS = [
+  ["dev", "Dev"], ["solceller", "Solceller Syd"], ["datorer", "Datorer och automationer"], ["privat", "Privat"]
+];
+const OWNERS = { du: "Du", claude: "Claude", codex: "Codex", cowork: "Cowork" };
+const ACTION_LABELS = {
+  kor: "Kör", senare: "Senare", jag_gor: "Jag gör den", klar: "Klar", parkera: "Parkera", ta_bort: "Ta bort",
+  fortsatt: "Fortsätt", gor: "Gör", nej: "Nej tack", upp: "Flytta upp", ner: "Flytta ner", aterta: "Ta tillbaka"
+};
+
+const state = { data: null, open: new Set(), showDone: false, showParked: {}, showIdeas: false, busy: false, error: "" };
+
+function store(key, value) {
+  try { if (value === undefined) return localStorage.getItem(key); if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch (e) { return null; }
+  return null;
+}
+
+const hash = new URLSearchParams(location.hash.slice(1));
+const readKey = hash.get("r") || store("tavlan.r");
+let deviceKey = hash.get("d") || store("tavlan.d");
+const pairCode = hash.get("p");
+if (readKey) store("tavlan.r", readKey);
+if (deviceKey) store("tavlan.d", deviceKey);
+
+async function rpc(name, args) {
+  const headers = { "apikey": ANON_KEY, "Content-Type": "application/json" };
+  if (ANON_KEY.startsWith("ey")) headers["Authorization"] = "Bearer " + ANON_KEY;
+  const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + name, { method: "POST", headers, body: JSON.stringify(args), cache: "no-store" });
+  const text = await res.text();
+  let body = null;
+  try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
+  if (!res.ok) {
+    const msg = body && body.message ? body.message : ("HTTP " + res.status);
+    const err = new Error(msg); err.status = res.status; throw err;
+  }
+  return body;
+}
+
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) {
+    if (k === null || k === undefined || k === false) continue;
+    n.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  }
+  return n;
+}
+
+function safeUrl(u) {
+  try { const x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : null; } catch (e) { return null; }
+}
+
+const fmtTime = new Intl.DateTimeFormat("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" });
+const fmtDay = new Intl.DateTimeFormat("sv-SE", { day: "numeric", month: "short", timeZone: "Europe/Stockholm" });
+const todayKey = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm" }).format(new Date());
+function when(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const sameDay = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm" }).format(d) === todayKey();
+  return sameDay ? fmtTime.format(d) : fmtDay.format(d) + " " + fmtTime.format(d);
+}
+function ago(ts) {
+  const days = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
+  return days <= 0 ? "idag" : days === 1 ? "i går" : days + " dagar";
+}
+function est(m) {
+  if (m === null || m === undefined) return null;
+  if (m < 60) return m + " min";
+  const h = Math.round(m / 6) / 10;
+  return String(h).replace(".", ",") + " h";
+}
+
+function isWaiting(i) { return i.status === "forslag" || i.status === "vantar" || i.glomd; }
+
+function defaultButtons(i) {
+  if (i.glomd && i.status !== "forslag" && i.status !== "vantar") return [["fortsatt"], ["parkera"], ["ta_bort"]];
+  if (i.status === "forslag") return i.owner === "du" ? [["jag_gor"], ["senare"], ["ta_bort"]] : [["kor"], ["senare"], ["jag_gor"]];
+  if (i.status === "vantar") return [["klar"], ["senare"]];
+  if (i.status === "ide") return [["gor"], ["parkera"]];
+  return [];
+}
+
+function itemButtons(i) {
+  const custom = Array.isArray(i.buttons) ? i.buttons.filter(b => b && b.label && (b.action || safeUrl(b.url))) : [];
+  if (custom.length) return custom.map(b => b.action ? [b.action, b.label, b.note || ""] : ["url", b.label, safeUrl(b.url)]);
+  return defaultButtons(i);
+}
+
+async function act(item, action, note, btn) {
+  if (!deviceKey) { flash("Para ihop telefonen först för att använda knapparna.", "info"); return; }
+  if (btn) btn.disabled = true;
+  try {
+    await rpc("tavlan_act", { p_read: readKey, p_device: deviceKey, p_item: item.id, p_action: action, p_note: note || "" });
+    if (action === "klar" || action === "ta_bort" || action === "nej") state.open.delete(item.id);
+    await load();
+  } catch (e) {
+    if (btn) btn.disabled = false;
+    flash(e.status === 401 || /invalid device/.test(e.message) ? "Telefonen är inte ihopparad längre. Be Claude om en ny parningslänk." : "Gick inte: " + e.message, "bad");
+  }
+}
+
+function buttonsFor(i, list) {
+  return el("div", { class: "btns" }, list.map(([action, label, note], idx) =>
+    el("button", { class: idx === 0 && (action === "kor" || action === "fortsatt" || action === "gor" || action === "svar") ? "primary" : null,
+      onclick: (ev) => {
+        ev.stopPropagation();
+        if (action === "url") window.open(note, "_blank", "noopener");
+        else act(i, action, note, ev.currentTarget);
+      } }, label || ACTION_LABELS[action] || action)));
+}
+
+function ownerLine(i) {
+  const o = OWNERS[i.owner] || i.owner;
+  const dot = el("span", { class: "dot", style: "background: var(--" + (OWNERS[i.owner] ? i.owner : "du") + ")" });
+  let tail = "";
+  if (i.status === "aktiv") tail = i.owner === "du" ? "" : " · pågår";
+  if (i.status === "klar") tail = " · klar";
+  return el("span", { class: "who" }, dot, o + tail);
+}
+
+function projectLabel(i) {
+  const p = (PROJECTS.find(x => x[0] === i.project) || [null, i.project])[1];
+  return i.area ? p + " · " + i.area : p;
+}
+
+function sourceLabel(i) {
+  if (i.source === "reminders") return "från Påminnelser";
+  if (i.source === "page") return "från sidan";
+  if (i.source === "github") return "från GitHub";
+  if (i.suggested_by) return "förslag från " + (OWNERS[i.suggested_by] || i.suggested_by);
+  return null;
+}
+
+function approvalBox(i) {
+  if (!i.approval_text) return null;
+  const copyBtn = el("button", { onclick: async (ev) => {
+    ev.stopPropagation();
+    try { await navigator.clipboard.writeText(i.approval_text); ev.currentTarget.textContent = "Kopierat"; }
+    catch (e) { ev.currentTarget.textContent = "Markera texten och kopiera"; }
+  } }, "Kopiera");
+  const url = safeUrl(i.approval_url);
+  return el("div", { class: "approval", onclick: ev => ev.stopPropagation() },
+    el("p", { class: "where" }, "Skicka i " + (i.approval_where || "chatten med " + (OWNERS[i.owner] || i.owner)) + ":"),
+    el("pre", null, i.approval_text),
+    el("div", { class: "btns" }, copyBtn, url ? el("button", { onclick: () => window.open(url, "_blank", "noopener") }, "Öppna chatten") : null));
+}
+
+function detailsBox(i) {
+  const links = (Array.isArray(i.links) ? i.links : []).map(l => [l && l.label, safeUrl(l && l.url)]).filter(l => l[1]);
+  const hist = (Array.isArray(i.history) ? i.history : []).slice(-10).reverse();
+  let replyInput;
+  const send = (ev) => {
+    ev.stopPropagation();
+    const t = replyInput.value.trim();
+    if (!t) { replyInput.focus(); return; }
+    act(i, "svar", t, ev.currentTarget);
+  };
+  const extra = [];
+  if (i.status !== "klar") {
+    if (i.status !== "aktiv" || i.owner !== "du") extra.push(["jag_gor"]);
+    extra.push(["klar"], ["upp"], ["ner"]);
+    if (i.status !== "parkerad") extra.push(["parkera"]);
+    extra.push(["ta_bort"]);
+  } else {
+    extra.push(["aterta"]);
+  }
+  return el("div", { class: "details", onclick: ev => ev.stopPropagation() },
+    i.details ? el("p", { class: "desc", style: "color: var(--text)" }, i.details) : null,
+    links.length ? [el("h4", null, "Länkar"), el("ul", null, links.map(([label, url]) => el("li", null, el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, label || url))))] : null,
+    hist.length ? [el("h4", null, "Hittills"), el("div", { class: "hist" }, hist.map(h => el("div", null, when(h.at) + " · " + (OWNERS[h.who] || h.who || "") + " · " + (h.what || ""))))] : null,
+    deviceKey ? [
+      el("h4", null, "Svara eller ändra"),
+      el("div", { class: "reply" },
+        replyInput = el("input", { type: "text", placeholder: "Gör den enklare, vänta till fredag …", enterkeyhint: "send",
+          onkeydown: ev => { if (ev.key === "Enter") send(ev); } }),
+        el("button", { onclick: send }, "Skicka")),
+      buttonsFor(i, extra)
+    ] : null,
+    el("div", { class: "meta" }, el("span", null, "Skapad " + when(i.created_at)), i.updated_at ? el("span", null, "Ändrad " + when(i.updated_at)) : null));
+}
+
+function block(i, opts) {
+  opts = opts || {};
+  const open = state.open.has(i.id);
+  const pills = [];
+  if (i.glomd && opts.waiting) pills.push(el("span", { class: "pill warn" }, "Glömd?"));
+  if (i.status === "ny") pills.push(el("span", { class: "pill info" }, "Ny"));
+  if (opts.waiting && est(i.est_minutes)) pills.push(el("span", { class: "pill time" }, est(i.est_minutes)));
+  const cls = ["card", "tap"];
+  if (opts.waiting) cls.push("wait");
+  if (i.suggested_by && i.status === "forslag") cls.push("dashed");
+  if (i.status === "klar") cls.push("done");
+  let descText = i.description;
+  if (opts.waiting && i.glomd && !i.description) descText = "Har stått still i " + ago(i.last_activity_at) + ".";
+  else if (opts.waiting && i.glomd) descText = i.description + "\nHar stått still i " + ago(i.last_activity_at) + ".";
+  return el("div", { class: cls.join(" "), id: "item-" + i.id, onclick: () => { open ? state.open.delete(i.id) : state.open.add(i.id); render(); } },
+    el("p", { class: "title" }, pills, i.title),
+    descText ? el("p", { class: "desc" }, descText) : null,
+    opts.waiting && i.wait_reason ? el("p", { class: "nowl" }, i.wait_reason) : null,
+    !opts.waiting && i.now_line && i.status === "aktiv" ? el("p", { class: "nowl" }, "Nu: " + i.now_line) : null,
+    opts.waiting ? approvalBox(i) : null,
+    (opts.waiting || i.status === "ide") && (deviceKey || itemButtons(i).some(b => b[0] === "url"))
+      ? buttonsFor(i, deviceKey ? itemButtons(i) : itemButtons(i).filter(b => b[0] === "url")) : null,
+    el("div", { class: "meta" }, el("span", null, projectLabel(i)), ownerLine(i), sourceLabel(i) ? el("span", null, sourceLabel(i)) : null,
+      i.status === "klar" && i.done_at ? el("span", null, "klar " + when(i.done_at)) : null),
+    open ? detailsBox(i) : null);
+}
+
+function section(title, count, cls, extraRight) {
+  return el("div", { class: "sec" + (cls ? " " + cls : "") }, el("span", null, title), extraRight || (count !== null ? el("span", null, String(count)) : null));
+}
+
+function listQuestions(meta) {
+  const lists = meta.listor && Array.isArray(meta.listor.lists) ? meta.listor.lists : [];
+  const priv = (meta.listor && meta.listor.private) || {};
+  return lists.filter(l => l && l.id && priv[l.id] === undefined).map(l =>
+    el("div", { class: "card wait" },
+      el("p", { class: "title" }, el("span", { class: "pill time" }, "10 s"), "Är listan ”" + l.name + "” privat?"),
+      el("p", { class: "desc" }, "Privata listor kommer aldrig in på tavlan."),
+      deviceKey ? el("div", { class: "btns" },
+        el("button", { onclick: ev => setList(l.id, true, ev.currentTarget) }, "Privat"),
+        el("button", { onclick: ev => setList(l.id, false, ev.currentTarget) }, "Visa på tavlan")) : null,
+      el("div", { class: "meta" }, el("span", null, "Påminnelser"))));
+}
+
+async function setList(id, priv, btn) {
+  btn.disabled = true;
+  try { await rpc("tavlan_set_list", { p_read: readKey, p_device: deviceKey, p_list: id, p_private: priv }); await load(); }
+  catch (e) { btn.disabled = false; flash("Gick inte: " + e.message, "bad"); }
+}
+
+function render() {
+  const app = document.getElementById("app");
+  const d = state.data;
+  if (!d) return;
+  const items = d.items || [];
+  const meta = d.meta || {};
+  const waiting = items.filter(i => isWaiting(i) && i.status !== "klar");
+  const lq = listQuestions(meta);
+  const active = items.filter(i => i.status === "aktiv" && i.owner !== "du" && !i.glomd);
+  const parts = [];
+
+  document.getElementById("sum").textContent =
+    (waiting.length + lq.length) + " väntar på dig · " + active.length + " AI-jobb pågår";
+  const stamps = items.map(i => i.updated_at).concat(Object.values(meta).map(m => m && m._updated)).filter(Boolean).map(t => new Date(t).getTime());
+  document.getElementById("stamp").textContent = stamps.length ? "Uppdaterad " + when(new Date(Math.max(...stamps)).toISOString()) : "";
+
+  const top = meta.viktigast;
+  if (top && top.text) {
+    const target = top.item_id ? items.find(i => i.id === top.item_id) : null;
+    parts.push(section("Det viktigaste nu", null));
+    parts.push(el("div", { class: "card hero" + (target ? " tap" : ""), onclick: target ? () => { state.open.add(target.id); render(); const n = document.getElementById("item-" + target.id); if (n) n.scrollIntoView({ behavior: "smooth", block: "center" }); } : null },
+      el("p", { class: "title" }, top.text), top.why ? el("p", { class: "desc" }, top.why) : null));
+  }
+
+  const morning = meta.morgon;
+  const hour = Number(new Intl.DateTimeFormat("sv-SE", { hour: "numeric", hour12: false, timeZone: "Europe/Stockholm" }).format(new Date()));
+  if (morning && morning.date === todayKey() && hour < 12 && Array.isArray(morning.lines) && morning.lines.length) {
+    parts.push(section("I natt", null));
+    parts.push(el("div", { class: "card soft" }, morning.lines.slice(0, 3).map(l => el("p", { class: "desc", style: "margin: 2px 0; color: var(--text)" }, l))));
+  }
+
+  const cal = meta.kalender;
+  if (cal && cal.date === todayKey()) {
+    const evs = Array.isArray(cal.events) ? cal.events : [];
+    parts.push(section("Idag", null));
+    parts.push(el("div", { class: "card soft" }, evs.length ? el("div", { class: "cal" }, evs.map(e => [
+      el("span", { class: "t" }, e.allday ? "Heldag" : (e.start || "")),
+      el("span", { class: "e" }, e.title + (e.place ? ", " + e.place : ""))])) : el("p", { class: "desc", style: "margin: 0" }, "Inga möten idag.")));
+  }
+
+  parts.push(section("Väntar på dig", waiting.length + lq.length, "warn"));
+  if (!waiting.length && !lq.length) parts.push(el("p", { class: "empty" }, "Inget väntar på dig just nu."));
+  parts.push(lq);
+  parts.push(waiting.map(i => block(i, { waiting: true })));
+
+  for (const [key, label] of PROJECTS) {
+    const inProj = items.filter(i => i.project === key && !isWaiting(i));
+    const live = inProj.filter(i => i.status === "aktiv" || i.status === "ny");
+    const ideas = key === "dev" ? inProj.filter(i => i.status === "ide") : [];
+    const parked = inProj.filter(i => i.status === "parkerad");
+    parts.push(section(label, live.length));
+    if (!live.length) parts.push(el("p", { class: "empty" }, "Inget pågår."));
+    parts.push(live.map(i => block(i)));
+    if (key === "dev") {
+      parts.push(el("div", { class: "area" }, el("button", { class: "link", onclick: () => { state.showIdeas = !state.showIdeas; render(); } },
+        "Idéhyllan · " + ideas.length + (state.showIdeas ? " ▴" : " ▾"))));
+      if (state.showIdeas) parts.push(ideas.length ? ideas.map(i => block(i)) : el("p", { class: "empty" }, "Inga idéer på hyllan. Skriv ”Idé: …” nedan."));
+    }
+    if (parked.length) {
+      parts.push(el("div", { class: "area" }, el("button", { class: "link", onclick: () => { state.showParked[key] = !state.showParked[key]; render(); } },
+        "Parkerat · " + parked.length + (state.showParked[key] ? " ▴" : " ▾"))));
+      if (state.showParked[key]) parts.push(parked.map(i => block(i)));
+    }
+  }
+
+  if (deviceKey) {
+    let input;
+    const add = async (ev) => {
+      const t = input.value.trim();
+      if (!t) { input.focus(); return; }
+      const btn = ev && ev.currentTarget && ev.currentTarget.tagName === "BUTTON" ? ev.currentTarget : null;
+      if (btn) btn.disabled = true;
+      try { await rpc("tavlan_add", { p_read: readKey, p_device: deviceKey, p_text: t }); input.value = ""; await load(); flash("Tillagt. En AI sorterar in det strax.", "ok"); }
+      catch (e) { flash("Gick inte: " + e.message, "bad"); }
+      if (btn) btn.disabled = false;
+    };
+    parts.push(el("div", { class: "add" },
+      input = el("input", { type: "text", placeholder: "Ring elnätsbolaget om ny anslutning", enterkeyhint: "done", "aria-label": "Ny sak",
+        onkeydown: ev => { if (ev.key === "Enter") add(ev); } }),
+      el("button", { onclick: add }, "Lägg till")));
+  }
+
+  const done = items.filter(i => i.status === "klar").sort((a, b) => new Date(b.done_at) - new Date(a.done_at));
+  parts.push(section("Klart senaste 30 dagarna", null, null, el("button", { class: "link", onclick: () => { state.showDone = !state.showDone; render(); } }, done.length + (state.showDone ? " ▴" : " ▾"))));
+  if (state.showDone) parts.push(done.length ? done.map(i => block(i)) : el("p", { class: "empty" }, "Inget klart ännu."));
+
+  const focused = document.activeElement;
+  const keep = focused && focused.tagName === "INPUT" ? { ph: focused.placeholder, val: focused.value, parent: focused.closest(".card") ? focused.closest(".card").id : null } : null;
+  app.replaceChildren(...parts.flat(3).filter(Boolean));
+  if (keep) {
+    const scope = keep.parent ? document.getElementById(keep.parent) : app;
+    const again = scope && [...scope.querySelectorAll("input")].find(x => x.placeholder === keep.ph);
+    if (again) { again.value = keep.val; again.focus(); }
+  }
+}
+
+function flash(msg, kind) {
+  const b = document.getElementById("banners");
+  const n = el("div", { class: "banner " + (kind || "info") }, msg);
+  b.replaceChildren(n);
+  if (kind !== "bad") setTimeout(() => { if (n.parentNode) n.remove(); }, 5000);
+}
+
+async function load() {
+  if (state.busy) return;
+  state.busy = true;
+  try {
+    state.data = await rpc("tavlan_state", { p_read: readKey });
+    state.error = "";
+    render();
+  } catch (e) {
+    flash(e.status === 401 || /invalid read/.test(e.message) ? "Länken är ogiltig." : "Kunde inte hämta tavlan: " + e.message, "bad");
+  } finally {
+    state.busy = false;
+  }
+}
+
+async function start() {
+  if (!readKey) {
+    document.getElementById("sum").textContent = "Öppna tavlan via din hemliga länk.";
+    return;
+  }
+  if (pairCode) {
+    try {
+      const name = /iPhone/.test(navigator.userAgent) ? "iPhone" : /iPad/.test(navigator.userAgent) ? "iPad" : /Mac/.test(navigator.userAgent) ? "Mac" : "Enhet";
+      const r = await rpc("tavlan_pair", { p_read: readKey, p_code: pairCode, p_name: name });
+      deviceKey = r.device;
+      store("tavlan.d", deviceKey);
+      flash("Klart, enheten är ihopparad. Lägg sidan på hemskärmen: Dela → Lägg till på hemskärmen.", "ok");
+    } catch (e) {
+      flash(/already used/.test(e.message) ? "Parningslänken är redan använd." : "Parningen gick inte: " + e.message, "bad");
+    }
+  } else if (deviceKey) {
+    try { await rpc("tavlan_check_device", { p_read: readKey, p_device: deviceKey }); }
+    catch (e) { if (/invalid device/.test(e.message)) { deviceKey = null; store("tavlan.d", null); } }
+  }
+  const h = new URLSearchParams();
+  h.set("r", readKey);
+  if (deviceKey) h.set("d", deviceKey);
+  history.replaceState(null, "", location.pathname + location.search + "#" + h.toString());
+  if (!deviceKey) {
+    const b = document.getElementById("banners");
+    b.append(el("div", { class: "banner info" }, "Läsläge. Knapparna kommer när enheten är ihopparad."));
+  }
+  await load();
+  setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(); });
+}
+
+window.addEventListener("hashchange", () => {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("p") || (h.get("r") && h.get("r") !== readKey)) location.reload();
+});
+
+start();
+</script>
+</body>
+</html>
