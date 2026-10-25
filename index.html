@@ -174,7 +174,7 @@ function el(tag, attrs, ...kids) {
     else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
     else n.setAttribute(k, v === true ? "" : v);
   }
-  for (const k of kids.flat()) {
+  for (const k of kids.flat(Infinity)) {
     if (k === null || k === undefined || k === false) continue;
     n.append(k instanceof Node ? k : document.createTextNode(String(k)));
   }
@@ -348,14 +348,18 @@ function section(title, count, cls, extraRight) {
 function listQuestions(meta) {
   const lists = meta.listor && Array.isArray(meta.listor.lists) ? meta.listor.lists : [];
   const priv = (meta.listor && meta.listor.private) || {};
-  return lists.filter(l => l && l.id && priv[l.id] === undefined).map(l =>
-    el("div", { class: "card wait" },
-      el("p", { class: "title" }, el("span", { class: "pill time" }, "10 s"), "Är listan ”" + l.name + "” privat?"),
-      el("p", { class: "desc" }, "Privata listor kommer aldrig in på tavlan."),
-      deviceKey ? el("div", { class: "btns" },
+  const open = lists.filter(l => l && l.id && priv[l.id] === undefined);
+  if (!open.length) return [];
+  return [el("div", { class: "card wait" },
+    el("p", { class: "title" }, el("span", { class: "pill time" }, Math.max(1, Math.round(open.length / 4)) + " min"),
+      "Vilka listor i Påminnelser är privata?"),
+    el("p", { class: "desc" }, "Privata listor tas bort från tavlan och kommer aldrig in igen. Resten syns här."),
+    open.map(l => el("div", { style: "display: flex; align-items: center; gap: 6px; margin-top: 10px" },
+      el("span", { style: "flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere" }, l.name),
+      deviceKey ? [
         el("button", { onclick: ev => setList(l.id, true, ev.currentTarget) }, "Privat"),
-        el("button", { onclick: ev => setList(l.id, false, ev.currentTarget) }, "Visa på tavlan")) : null,
-      el("div", { class: "meta" }, el("span", null, "Påminnelser"))));
+        el("button", { onclick: ev => setList(l.id, false, ev.currentTarget) }, "Visa")] : null)),
+    el("div", { class: "meta" }, el("span", null, "Påminnelser")))];
 }
 
 async function setList(id, priv, btn) {
@@ -408,7 +412,7 @@ function render() {
   if (cal && cal.date === todayKey()) {
     const evs = Array.isArray(cal.events) ? cal.events : [];
     parts.push(section("Idag", null));
-    parts.push(el("div", { class: "card soft" }, evs.length ? el("div", { class: "cal" }, evs.map(e => [
+    parts.push(el("div", { class: "card soft" }, evs.length ? el("div", { class: "cal" }, evs.flatMap(e => [
       el("span", { class: "t" }, e.allday ? "Heldag" : (e.start || "")),
       el("span", { class: "e" }, e.title + (e.place ? ", " + e.place : ""))])) : el("p", { class: "desc", style: "margin: 0" }, "Inga möten idag.")));
   }
