@@ -329,9 +329,23 @@ function detailsBox(i) {
     el("div", { class: "meta" }, el("span", null, "Skapad " + when(i.created_at)), i.updated_at ? el("span", null, "Ändrad " + when(i.updated_at)) : null));
 }
 
+function pendingText(i) {
+  const pend = ((state.data && state.data.pending) || []).filter(p => p.item_id === i.id);
+  if (!pend.length) return null;
+  const last = pend[pend.length - 1];
+  let what = ACTION_LABELS[last.action] || last.note || last.action;
+  if (last.action === "svar") {
+    const b = (Array.isArray(i.buttons) ? i.buttons : []).find(x => x && x.action === "svar" && x.note === last.note);
+    what = b ? b.label : "”" + last.note + "”";
+  }
+  if (last.action === "ny") what = "Ny sak";
+  return "Skickat till AI:n: " + what + ". Den tar det inom någon minut.";
+}
+
 function block(i, opts) {
   opts = opts || {};
   const open = state.open.has(i.id);
+  const pending = pendingText(i);
   const pills = [];
   if (i.glomd && opts.waiting) pills.push(el("span", { class: "pill warn" }, "Glömd?"));
   if (i.status === "ny") pills.push(el("span", { class: "pill info" }, "Ny"));
@@ -349,9 +363,10 @@ function block(i, opts) {
     opts.waiting && i.wait_reason ? el("p", { class: "nowl" }, i.wait_reason) : null,
     !opts.waiting && i.now_line && i.status === "aktiv" ? el("p", { class: "nowl" }, "Nu: " + i.now_line) : null,
     opts.waiting ? approvalBox(i) : null,
+    pending ? el("p", { class: "nowl", style: "color: var(--info)" }, pending) : null,
     (opts.waiting || i.status === "ide") && (deviceKey || itemButtons(i).some(b => b[0] === "url"))
-      ? buttonsFor(i, deviceKey ? itemButtons(i) : itemButtons(i).filter(b => b[0] === "url")) : null,
-    deviceKey && !open && (opts.waiting || i.status === "ide" || (i.status === "aktiv" && i.owner !== "du")) ? commandBox(i) : null,
+      ? buttonsFor(i, deviceKey && !pending ? itemButtons(i) : itemButtons(i).filter(b => b[0] === "url")) : null,
+    deviceKey && !open && !pending && (opts.waiting || i.status === "ide" || (i.status === "aktiv" && i.owner !== "du")) ? commandBox(i) : null,
     el("div", { class: "meta" }, el("span", null, projectLabel(i)), ownerLine(i), sourceLabel(i) ? el("span", null, sourceLabel(i)) : null,
       i.status === "klar" && i.done_at ? el("span", null, "klar " + when(i.done_at)) : null),
     open ? detailsBox(i) : null);
