@@ -222,7 +222,7 @@ function itemButtons(i) {
 }
 
 async function act(item, action, note, btn) {
-  if (!deviceKey) { flash("Para ihop telefonen först för att använda knapparna.", "info"); return; }
+  if (!deviceKey) { flash("Para ihop telefonen först för att använda knapparna.", "info"); throw new Error("not paired"); }
   if (btn) btn.disabled = true;
   try {
     await rpc("tavlan_act", { p_read: readKey, p_device: deviceKey, p_item: item.id, p_action: action, p_note: note || "" });
@@ -231,6 +231,7 @@ async function act(item, action, note, btn) {
   } catch (e) {
     if (btn) btn.disabled = false;
     flash(e.status === 401 || /invalid device/.test(e.message) ? "Telefonen är inte ihopparad längre. Be Claude om en ny parningslänk." : "Gick inte: " + e.message, "bad");
+    throw e;
   }
 }
 
@@ -240,7 +241,7 @@ function buttonsFor(i, list) {
       onclick: (ev) => {
         ev.stopPropagation();
         if (action === "url") window.open(note, "_blank", "noopener");
-        else act(i, action, note, ev.currentTarget);
+        else act(i, action, note, ev.currentTarget).catch(() => {});
       } }, label || ACTION_LABELS[action] || action)));
 }
 
@@ -261,7 +262,7 @@ function projectLabel(i) {
 function sourceLabel(i) {
   if (i.source === "reminders") return "från Påminnelser";
   if (i.source === "page") return "från sidan";
-  if (i.source === "github") return "från GitHub";
+  if (i.source === "github") return "PR på GitHub";
   if (i.suggested_by) return "förslag från " + (OWNERS[i.suggested_by] || i.suggested_by);
   return null;
 }
@@ -280,6 +281,20 @@ function approvalBox(i) {
     el("div", { class: "btns" }, copyBtn, url ? el("button", { onclick: () => window.open(url, "_blank", "noopener") }, "Öppna chatten") : null));
 }
 
+function commandBox(i) {
+  let input;
+  const send = (ev) => {
+    ev.stopPropagation();
+    const t = input.value.trim();
+    if (!t) { input.focus(); return; }
+    act(i, "svar", t, ev.currentTarget).then(() => flash("Skickat. AI:n tar det inom någon minut.", "ok")).catch(() => {});
+  };
+  return el("div", { class: "reply", onclick: ev => ev.stopPropagation() },
+    input = el("input", { type: "text", placeholder: "Skriv till AI:n, t.ex. merga den", enterkeyhint: "send",
+      "aria-label": "Kommando till AI:n", onkeydown: ev => { if (ev.key === "Enter") send(ev); } }),
+    el("button", { onclick: send }, "Skicka"));
+}
+
 function detailsBox(i) {
   const links = (Array.isArray(i.links) ? i.links : []).map(l => [l && l.label, safeUrl(l && l.url)]).filter(l => l[1]);
   const hist = (Array.isArray(i.history) ? i.history : []).slice(-10).reverse();
@@ -288,7 +303,7 @@ function detailsBox(i) {
     ev.stopPropagation();
     const t = replyInput.value.trim();
     if (!t) { replyInput.focus(); return; }
-    act(i, "svar", t, ev.currentTarget);
+    act(i, "svar", t, ev.currentTarget).then(() => flash("Skickat. AI:n tar det inom någon minut.", "ok")).catch(() => {});
   };
   const extra = [];
   if (i.status !== "klar") {
@@ -304,9 +319,9 @@ function detailsBox(i) {
     links.length ? [el("h4", null, "Länkar"), el("ul", null, links.map(([label, url]) => el("li", null, el("a", { href: url, target: "_blank", rel: "noopener noreferrer" }, label || url))))] : null,
     hist.length ? [el("h4", null, "Hittills"), el("div", { class: "hist" }, hist.map(h => el("div", null, when(h.at) + " · " + (OWNERS[h.who] || h.who || "") + " · " + (h.what || ""))))] : null,
     deviceKey ? [
-      el("h4", null, "Svara eller ändra"),
+      el("h4", null, "Skriv till AI:n"),
       el("div", { class: "reply" },
-        replyInput = el("input", { type: "text", placeholder: "Gör den enklare, vänta till fredag …", enterkeyhint: "send",
+        replyInput = el("input", { type: "text", placeholder: "Skriv till AI:n, t.ex. merga den", enterkeyhint: "send",
           onkeydown: ev => { if (ev.key === "Enter") send(ev); } }),
         el("button", { onclick: send }, "Skicka")),
       buttonsFor(i, extra)
@@ -336,6 +351,7 @@ function block(i, opts) {
     opts.waiting ? approvalBox(i) : null,
     (opts.waiting || i.status === "ide") && (deviceKey || itemButtons(i).some(b => b[0] === "url"))
       ? buttonsFor(i, deviceKey ? itemButtons(i) : itemButtons(i).filter(b => b[0] === "url")) : null,
+    deviceKey && !open && (opts.waiting || i.status === "ide" || (i.status === "aktiv" && i.owner !== "du")) ? commandBox(i) : null,
     el("div", { class: "meta" }, el("span", null, projectLabel(i)), ownerLine(i), sourceLabel(i) ? el("span", null, sourceLabel(i)) : null,
       i.status === "klar" && i.done_at ? el("span", null, "klar " + when(i.done_at)) : null),
     open ? detailsBox(i) : null);
